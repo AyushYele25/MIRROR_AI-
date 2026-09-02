@@ -269,9 +269,76 @@ async def run_analysis_pipeline(job_id: str, username: str) -> None:
             job.current_step = "Generating insights"
             await db.commit()
 
-            # ── Stage 4: Insight Generation (90-100%) — stub ─────
-            # TODO: Phase 4 — create evidence-backed insights
-            # TODO: Phase 4 — LLM explanation generation
+            # ── Stage 4: Insight Generation (90-100%) ────────────
+            from app.analysis.insights import generate_all_insights
+            from app.db.models import Evidence, Insight, InsightSeverity, InsightType
+
+            # Build (repo_name, feature_vector) pairs for evidence linking
+            repo_fv_pairs = []
+            for repo, rfv in zip(repos, repo_feature_vectors):
+                if rfv:
+                    repo_fv_pairs.append((repo.name, rfv))
+
+            all_insights = generate_all_insights(fingerprint, repo_fv_pairs)
+
+            for insight_item in all_insights:
+                # Map string types to enums
+                try:
+                    insight_type = InsightType(insight_item.type)
+                except ValueError:
+                    insight_type = InsightType.OBSERVATION
+
+                try:
+                    severity = InsightSeverity(insight_item.severity)
+                except ValueError:
+                    severity = InsightSeverity.INFO
+
+                insight_record = Insight(
+                    profile_id=profile.id,
+                    type=insight_type,
+                    title=insight_item.title,
+                    severity=severity,
+                    score=insight_item.score,
+                    confidence=insight_item.confidence,
+                    explanation=insight_item.explanation,
+                    recommendation=insight_item.recommendation,
+                )
+                db.add(insight_record)
+                await db.flush()
+
+                # Add evidence items
+                for ev in insight_item.evidence:
+                    evidence_record = Evidence(
+                        insight_id=insight_record.id,
+                        metric_name=ev.metric_name,
+                        metric_value=ev.metric_value,
+                        source_url=ev.source_url or "",
+                        context=ev.context or "",
+                    )
+                    db.add(evidence_record)
+
+            await db.flush()
+
+            # Try LLM profile summary (non-blocking, best-effort)
+            try:
+                from app.llm.explain import generate_profile_summary
+
+                dims = fingerprint.to_feature_vector_dict()
+                strong = [d for d, v in dims.items() if v >= 70]
+                weak = [d for d, v in dims.items() if v < 35]
+
+                summary_result = await generate_profile_summary(
+                    username, dims, fingerprint.confidence,
+                    fingerprint.repos_analyzed, strong, weak,
+                )
+                # Store summary in profile (if column exists)
+                if summary_result.get("summary"):
+                    logger.info(
+                        "profile_summary_generated",
+                        headline=summary_result.get("headline", ""),
+                    )
+            except Exception as e:
+                logger.debug("llm_summary_skipped", error=str(e))
 
             # ── Complete ─────────────────────────────────────────
             job.status = JobStatus.COMPLETED

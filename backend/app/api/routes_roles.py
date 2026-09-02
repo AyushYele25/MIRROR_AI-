@@ -1,4 +1,4 @@
-"""Role-fit and insights routes."""
+"""Role-fit and insights routes — now using the ML engine."""
 
 from __future__ import annotations
 
@@ -16,9 +16,10 @@ from app.api.schemas import (
     RoleFitRequest,
     RoleFitResponse,
 )
-from app.db.models import GapResult, Insight, Profile, RoleProfile, User
+from app.db.models import GapResult, Insight, Profile, User
 from app.db.session import get_db
 from app.logging_config import get_logger
+from app.ml.role_fit import calculate_role_fit, get_available_roles
 
 logger = get_logger(__name__)
 
@@ -26,11 +27,15 @@ router = APIRouter(prefix="/api", tags=["roles"])
 
 
 @router.post("/role-fit", response_model=RoleFitResponse)
-async def calculate_role_fit(
+async def role_fit_endpoint(
     request: RoleFitRequest,
     db: AsyncSession = Depends(get_db),
 ) -> RoleFitResponse:
-    """Calculate how well a developer profile fits a target role."""
+    """Calculate how well a developer profile fits a target role.
+
+    Uses the ML role-fit engine with 5 predefined target roles.
+    Returns gap analysis, strengths, and next-challenge recommendation.
+    """
     username = request.github_username.strip().lower()
 
     # Get user and latest profile
@@ -51,67 +56,60 @@ async def calculate_role_fit(
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not yet analyzed")
 
-    # Get role profile
-    role_result = await db.execute(
-        select(RoleProfile)
-        .where(RoleProfile.role_name == request.target_role)
-    )
-    role_skills = role_result.scalars().all()
-    if not role_skills:
+    # Validate role
+    available = get_available_roles()
+    if request.target_role not in available:
         raise HTTPException(
-            status_code=404,
+            status_code=400,
             detail=f"Unknown role: {request.target_role}. "
-                   f"Supported: ML Engineer, Data Scientist, Software Engineer, "
-                   f"Data Engineer, AI Engineer",
+                   f"Available: {', '.join(available)}",
         )
 
-    # Calculate gaps
+    # Calculate role fit using ML engine
     fv = profile.feature_vector or {}
+    try:
+        result = calculate_role_fit(fv, request.target_role)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Build response gaps
     gaps = []
-    total_fit = 0.0
-    total_weight = 0.0
-
-    for skill in role_skills:
-        current = fv.get(skill.skill, 0.0)
-        target = skill.weight * 100  # Scale to 0-100
-        gap = max(0, target - current)
-        fit_ratio = min(current / target, 1.0) if target > 0 else 1.0
-
-        total_fit += fit_ratio * skill.weight
-        total_weight += skill.weight
-
+    for gap_analysis in result.gaps + result.strengths:
         gaps.append(GapDetail(
-            skill=skill.skill,
-            current_score=round(current, 1),
-            target_score=round(target, 1),
-            gap=round(gap, 1),
+            skill=gap_analysis.dimension,
+            current_score=gap_analysis.current_score,
+            target_score=gap_analysis.target_score,
+            gap=gap_analysis.gap,
         ))
 
         # Persist gap result
         gap_record = GapResult(
             profile_id=profile.id,
             role_name=request.target_role,
-            skill=skill.skill,
-            current_score=current,
-            target_score=target,
-            gap=gap,
+            skill=gap_analysis.dimension,
+            current_score=gap_analysis.current_score,
+            target_score=gap_analysis.target_score,
+            gap=gap_analysis.gap,
         )
         db.add(gap_record)
 
-    overall_fit = round((total_fit / total_weight * 100) if total_weight > 0 else 0, 1)
-
     await db.commit()
 
-    # Sort gaps by largest gap first
     gaps.sort(key=lambda g: g.gap, reverse=True)
 
     return RoleFitResponse(
         profile_id=profile.id,
         github_login=username,
         target_role=request.target_role,
-        overall_fit_score=overall_fit,
+        overall_fit_score=result.overall_fit_score,
         gaps=gaps,
     )
+
+
+@router.get("/role-fit/roles")
+async def list_available_roles():
+    """List all available target roles for role-fit analysis."""
+    return {"roles": get_available_roles()}
 
 
 @router.get("/insights/{profile_id}", response_model=list[InsightResponse])
