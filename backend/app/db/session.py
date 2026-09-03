@@ -14,9 +14,27 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from app.config import settings
+import re
 
-is_sqlite = settings.database_url.startswith("sqlite")
+def _normalize_database_url(raw_url: str) -> str:
+    """Normalize database connection URLs for asyncpg compatibility."""
+    url = raw_url.strip()
+    if url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+    if "asyncpg" in url:
+        had_ssl = "sslmode=" in url or "neon.tech" in url or "ssl=require" in url
+        # Strip libpq-specific parameters unsupported by asyncpg
+        url = re.sub(r"[?&]sslmode=[^&]+", "", url)
+        url = re.sub(r"[?&]channel_binding=[^&]+", "", url)
+        if had_ssl and "ssl=" not in url:
+            sep = "&" if "?" in url else "?"
+            url = f"{url}{sep}ssl=require"
+    return url
+
+
+db_url = _normalize_database_url(settings.database_url)
+is_sqlite = db_url.startswith("sqlite")
 
 engine_kwargs = {
     "echo": settings.app_debug and not settings.is_production,
@@ -33,7 +51,7 @@ else:
         "connect_args": {"check_same_thread": False},
     })
 
-engine = create_async_engine(settings.database_url, **engine_kwargs)
+engine = create_async_engine(db_url, **engine_kwargs)
 
 async_session_factory = async_sessionmaker(
     engine,
