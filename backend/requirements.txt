@@ -7,6 +7,7 @@ pydantic-settings==2.7.1
 # ── Database ──
 sqlalchemy[asyncio]==2.0.36
 asyncpg==0.30.0
+aiosqlite==0.22.1
 alembic==1.14.1
 greenlet==3.1.1
 
@@ -16,16 +17,10 @@ httpx==0.28.1
 # ── Code Analysis ──
 radon==6.0.1
 
-# ── ML ──
+# ── Machine Learning ──
 scikit-learn==1.6.1
-numpy==2.2.2
-pandas==2.2.3
-hdbscan==0.8.40
-umap-learn==0.5.7
-
-# ── Embeddings & Vector Search ──
-sentence-transformers==3.3.1
-faiss-cpu==1.9.0.post1
+numpy>=1.26.0
+pandas>=2.2.0
 
 # ── LLM ──
 google-genai==1.5.0
@@ -33,7 +28,6 @@ google-genai==1.5.0
 # ── Testing ──
 pytest==8.3.4
 pytest-asyncio==0.25.0
-httpx==0.28.1
 
 # ── Utilities ──
 python-dotenv==1.0.1

@@ -103,14 +103,14 @@ def cluster_profiles(
     # ── Clustering ───────────────────────────────────────────────
     if method == "hdbscan" and len(vectors) >= min_cluster_size * 2:
         try:
-            from hdbscan import HDBSCAN
+            from sklearn.cluster import HDBSCAN
             clusterer = HDBSCAN(
                 min_cluster_size=min_cluster_size,
                 min_samples=2,
                 metric="euclidean",
             )
             labels = clusterer.fit_predict(X_scaled)
-        except ImportError:
+        except (ImportError, Exception):
             logger.warning("hdbscan_not_available, falling back to kmeans")
             method = "kmeans"
 
