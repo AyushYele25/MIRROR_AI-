@@ -16,6 +16,8 @@ from sqlalchemy.ext.asyncio import (
 
 import re
 
+from app.config import settings
+
 def _normalize_database_url(raw_url: str) -> str:
     """Normalize database connection URLs for asyncpg compatibility."""
     url = raw_url.strip()
