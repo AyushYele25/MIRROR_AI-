@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Sparkles, Search, ShieldCheck, Trash2 } from "lucide-react";
+import { Sparkles, Search, Trash2 } from "lucide-react";
 
 interface NavbarProps {
   currentUsername: string;

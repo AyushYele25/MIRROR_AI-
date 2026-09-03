@@ -19,12 +19,17 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Integer,
+    JSON,
     String,
     Text,
+    Uuid,
     func,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+JSON_TYPE = JSON().with_variant(JSONB, "postgresql")
+UUID_TYPE = Uuid().with_variant(PG_UUID(as_uuid=True), "postgresql")
 
 
 class Base(DeclarativeBase):
@@ -64,7 +69,7 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        UUID_TYPE, primary_key=True, default=uuid.uuid4
     )
     github_login: Mapped[str] = mapped_column(
         String(255), unique=True, index=True, nullable=False
@@ -99,10 +104,10 @@ class Repository(Base):
     __tablename__ = "repositories"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        UUID_TYPE, primary_key=True, default=uuid.uuid4
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        UUID_TYPE, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     github_id: Mapped[int] = mapped_column(Integer, unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -116,7 +121,7 @@ class Repository(Base):
     is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
     default_branch: Mapped[str] = mapped_column(String(255), default="main")
     size_kb: Mapped[int] = mapped_column(Integer, default=0)
-    topics: Mapped[dict | None] = mapped_column(JSONB)
+    topics: Mapped[dict | None] = mapped_column(JSON_TYPE)
     github_created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     github_pushed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_analyzed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -143,10 +148,10 @@ class Commit(Base):
     __tablename__ = "commits"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        UUID_TYPE, primary_key=True, default=uuid.uuid4
     )
     repo_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("repositories.id", ondelete="CASCADE"),
+        UUID_TYPE, ForeignKey("repositories.id", ondelete="CASCADE"),
         nullable=False,
     )
     sha: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
@@ -173,10 +178,10 @@ class File(Base):
     __tablename__ = "files"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        UUID_TYPE, primary_key=True, default=uuid.uuid4
     )
     repo_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("repositories.id", ondelete="CASCADE"),
+        UUID_TYPE, ForeignKey("repositories.id", ondelete="CASCADE"),
         nullable=False,
     )
     path: Mapped[str] = mapped_column(String(1024), nullable=False)
@@ -205,10 +210,10 @@ class FileFeature(Base):
     __tablename__ = "file_features"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        UUID_TYPE, primary_key=True, default=uuid.uuid4
     )
     file_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("files.id", ondelete="CASCADE"), nullable=False
+        UUID_TYPE, ForeignKey("files.id", ondelete="CASCADE"), nullable=False
     )
     cyclomatic_complexity: Mapped[float | None] = mapped_column(Float)
     function_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -237,10 +242,10 @@ class RepoFeature(Base):
     __tablename__ = "repo_features"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        UUID_TYPE, primary_key=True, default=uuid.uuid4
     )
     repo_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("repositories.id", ondelete="CASCADE"),
+        UUID_TYPE, ForeignKey("repositories.id", ondelete="CASCADE"),
         nullable=False,
     )
     feature_name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -261,13 +266,13 @@ class Profile(Base):
     __tablename__ = "profiles"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        UUID_TYPE, primary_key=True, default=uuid.uuid4
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        UUID_TYPE, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     version: Mapped[int] = mapped_column(Integer, default=1)
-    feature_vector: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    feature_vector: Mapped[dict] = mapped_column(JSON_TYPE, nullable=False)
     confidence: Mapped[float] = mapped_column(Float, default=0.0)
     repos_analyzed: Mapped[int] = mapped_column(Integer, default=0)
     total_commits: Mapped[int] = mapped_column(Integer, default=0)
@@ -292,10 +297,10 @@ class Insight(Base):
     __tablename__ = "insights"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        UUID_TYPE, primary_key=True, default=uuid.uuid4
     )
     profile_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("profiles.id", ondelete="CASCADE"),
+        UUID_TYPE, ForeignKey("profiles.id", ondelete="CASCADE"),
         nullable=False,
     )
     type: Mapped[InsightType] = mapped_column(
@@ -326,20 +331,20 @@ class Evidence(Base):
     __tablename__ = "evidence"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        UUID_TYPE, primary_key=True, default=uuid.uuid4
     )
     insight_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("insights.id", ondelete="CASCADE"),
+        UUID_TYPE, ForeignKey("insights.id", ondelete="CASCADE"),
         nullable=False,
     )
     repo_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("repositories.id", ondelete="SET NULL")
+        UUID_TYPE, ForeignKey("repositories.id", ondelete="SET NULL")
     )
     commit_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("commits.id", ondelete="SET NULL")
+        UUID_TYPE, ForeignKey("commits.id", ondelete="SET NULL")
     )
     file_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("files.id", ondelete="SET NULL")
+        UUID_TYPE, ForeignKey("files.id", ondelete="SET NULL")
     )
     metric_name: Mapped[str] = mapped_column(String(255), nullable=False)
     metric_value: Mapped[float] = mapped_column(Float, nullable=False)
@@ -359,7 +364,7 @@ class RoleProfile(Base):
     __tablename__ = "role_profiles"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        UUID_TYPE, primary_key=True, default=uuid.uuid4
     )
     role_name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     skill: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -376,10 +381,10 @@ class GapResult(Base):
     __tablename__ = "gap_results"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        UUID_TYPE, primary_key=True, default=uuid.uuid4
     )
     profile_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("profiles.id", ondelete="CASCADE"),
+        UUID_TYPE, ForeignKey("profiles.id", ondelete="CASCADE"),
         nullable=False,
     )
     role_name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -401,10 +406,10 @@ class AnalysisJob(Base):
     __tablename__ = "analysis_jobs"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        UUID_TYPE, primary_key=True, default=uuid.uuid4
     )
     user_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL")
+        UUID_TYPE, ForeignKey("users.id", ondelete="SET NULL")
     )
     github_username: Mapped[str] = mapped_column(String(255), nullable=False)
     status: Mapped[JobStatus] = mapped_column(

@@ -18,16 +18,12 @@ import {
 } from "../lib/api";
 import { DEMO_PROFILES, DEMO_REPOS } from "../lib/mockData";
 import { 
-  CheckCircle2, 
-  AlertCircle, 
   Sparkles, 
-  Layers, 
   GitCommit, 
   FolderGit2, 
   ShieldCheck, 
   RefreshCw,
   ArrowRight,
-  TrendingUp,
   Cpu
 } from "lucide-react";
 
@@ -35,38 +31,43 @@ export default function Home() {
   const [username, setUsername] = useState<string>("karpathy");
   const [profile, setProfile] = useState<Profile | null>(null);
   const [repos, setRepos] = useState<Repo[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
   const [selectedInsight, setSelectedInsight] = useState<Insight | null>(null);
+  const [refreshKey, setRefreshKey] = useState<number>(0);
 
   // Analysis Progress modal state
   const [analyzing, setAnalyzing] = useState<boolean>(false);
   const [analysisProgress, setAnalysisProgress] = useState<number>(0);
   const [analysisStep, setAnalysisStep] = useState<string>("");
 
-  const loadData = async (userToLoad: string) => {
-    setLoading(true);
-    try {
-      // Attempt backend call first
-      const [p, r] = await Promise.all([
-        getProfile(userToLoad),
-        getRepos(userToLoad),
-      ]);
-      setProfile(p);
-      setRepos(r);
-    } catch {
-      // Graceful offline demo fallback
-      const demo = DEMO_PROFILES[userToLoad.toLowerCase()] || DEMO_PROFILES["karpathy"];
-      const demoRepoList = DEMO_REPOS[userToLoad.toLowerCase()] || DEMO_REPOS["karpathy"];
-      setProfile(demo);
-      setRepos(demoRepoList);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadData(username);
-  }, [username]);
+    let isMounted = true;
+
+    async function fetchData() {
+      try {
+        const [p, r] = await Promise.all([
+          getProfile(username),
+          getRepos(username),
+        ]);
+        if (isMounted) {
+          setProfile(p);
+          setRepos(r);
+        }
+      } catch {
+        if (isMounted) {
+          const demo = DEMO_PROFILES[username.toLowerCase()] || DEMO_PROFILES["karpathy"];
+          const demoRepoList = DEMO_REPOS[username.toLowerCase()] || DEMO_REPOS["karpathy"];
+          setProfile(demo);
+          setRepos(demoRepoList);
+        }
+      }
+    }
+
+    fetchData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [username, refreshKey]);
 
   const handleStartAnalysis = async (userToAnalyze: string) => {
     setUsername(userToAnalyze);
@@ -89,14 +90,14 @@ export default function Home() {
             clearInterval(interval);
             setTimeout(() => {
               setAnalyzing(false);
-              loadData(userToAnalyze);
+              setRefreshKey((k) => k + 1);
             }, 600);
           } else if (status.status === "failed") {
             clearInterval(interval);
             setAnalysisStep(`Analysis notice: ${status.error_message || "Rate limit reached. Loading forensic snapshot."}`);
             setTimeout(() => {
               setAnalyzing(false);
-              loadData(userToAnalyze);
+              setRefreshKey((k) => k + 1);
             }, 1200);
           }
         } catch {
@@ -106,7 +107,7 @@ export default function Home() {
               clearInterval(interval);
               setTimeout(() => {
                 setAnalyzing(false);
-                loadData(userToAnalyze);
+                setRefreshKey((k) => k + 1);
               }, 400);
               return 100;
             }
@@ -131,7 +132,7 @@ export default function Home() {
           setAnalysisStep("Complete!");
           setTimeout(() => {
             setAnalyzing(false);
-            loadData(userToAnalyze);
+            setRefreshKey((k) => k + 1);
           }, 400);
         } else {
           setAnalysisProgress(step * 25);
@@ -169,8 +170,8 @@ export default function Home() {
             <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-cyan-500/10 via-violet-500/5 to-transparent blur-3xl pointer-events-none" />
 
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
-              {/* Profile Details */}
               <div className="flex items-center gap-5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={profile.avatar_url || "https://github.com/github.png"}
                   alt={profile.github_login}

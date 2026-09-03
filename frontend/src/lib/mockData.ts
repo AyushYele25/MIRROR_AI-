@@ -1,4 +1,4 @@
-import { Profile, RoleFitResult, Repo, JobStatus } from "./api";
+import { Profile, RoleFitResult, Repo } from "./api";
 
 export const DEMO_PROFILES: Record<string, Profile> = {
   "karpathy": {
@@ -206,7 +206,7 @@ export function getMockRoleFit(role: string, vector: Profile["feature_vector"]):
   const gaps = [];
 
   for (const [skill, target] of Object.entries(targets)) {
-    const current = (vector as any)[skill] || 50;
+    const current = (vector as unknown as Record<string, number>)[skill] ?? 50;
     const gap = Math.max(0, target - current);
     const fitRatio = Math.min(current / target, 1.0);
     totalFit += fitRatio;

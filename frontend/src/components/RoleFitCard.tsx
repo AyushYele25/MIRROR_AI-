@@ -1,38 +1,38 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { RoleFitResult, AVAILABLE_ROLES, getRoleFit } from "../lib/api";
+import { RoleFitResult, AVAILABLE_ROLES, getRoleFit, FeatureVector } from "../lib/api";
 import { getMockRoleFit } from "../lib/mockData";
-import { Award, Target, Compass, ChevronRight, Zap, CheckCircle, ArrowUpRight } from "lucide-react";
+import { Target, Compass, ArrowUpRight } from "lucide-react";
 
 interface RoleFitCardProps {
   username: string;
-  featureVector: any;
+  featureVector: FeatureVector;
 }
 
 export const RoleFitCard: React.FC<RoleFitCardProps> = ({ username, featureVector }) => {
   const [selectedRole, setSelectedRole] = useState<string>("Software Engineer");
   const [roleFit, setRoleFit] = useState<RoleFitResult | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     let isMounted = true;
-    setLoading(true);
 
-    getRoleFit(username, selectedRole)
-      .then((res) => {
+    async function fetchFit() {
+      try {
+        const res = await getRoleFit(username, selectedRole);
         if (isMounted) setRoleFit(res);
-      })
-      .catch(() => {
+      } catch {
         if (isMounted) {
-          // Fallback to offline calculation if backend is unavailable
           const fallback = getMockRoleFit(selectedRole, featureVector);
           setRoleFit(fallback);
         }
-      })
-      .finally(() => {
+      } finally {
         if (isMounted) setLoading(false);
-      });
+      }
+    }
+
+    fetchFit();
 
     return () => {
       isMounted = false;

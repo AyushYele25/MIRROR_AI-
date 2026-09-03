@@ -36,6 +36,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         environment=settings.app_env,
         debug=settings.app_debug,
     )
+    # Ensure database schema exists on startup
+    from app.db.models import Base
+    from app.db.session import engine
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    logger.info("database_schema_ready")
+
     yield
     logger.info("app_shutting_down")
 
