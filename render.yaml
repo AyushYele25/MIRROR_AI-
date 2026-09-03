@@ -8,6 +8,8 @@ services:
     region: oregon
     healthCheckPath: /health
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
