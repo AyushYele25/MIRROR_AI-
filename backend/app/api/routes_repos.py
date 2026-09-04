@@ -61,6 +61,7 @@ async def list_repos(
             description=repo.description,
             primary_language=repo.primary_language,
             stars=repo.stars,
+            forks_count=repo.forks_count,
             is_fork=repo.is_fork,
             size_kb=repo.size_kb,
             topics=repo.topics if isinstance(repo.topics, list) else None,

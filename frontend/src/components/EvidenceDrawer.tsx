@@ -13,6 +13,7 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({ insight, onClose
   if (!insight) return null;
 
   const isStrength = insight.type === "strength";
+  const evidenceList = Array.isArray(insight.evidence) ? insight.evidence : [];
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm transition-opacity">
@@ -63,18 +64,18 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({ insight, onClose
         <div className="mt-8 flex-1">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-              <Terminal className="w-4 h-4 text-cyan-400" /> Evidence Audit Trail ({insight.evidence.length})
+              <Terminal className="w-4 h-4 text-cyan-400" /> Evidence Audit Trail ({evidenceList.length})
             </h3>
             <span className="text-xs text-slate-400 font-mono">grounded: 100%</span>
           </div>
 
-          {insight.evidence.length === 0 ? (
+          {evidenceList.length === 0 ? (
             <div className="p-6 text-center text-slate-500 border border-dashed border-slate-800 rounded-xl text-sm">
               No granular file-level evidence attached.
             </div>
           ) : (
             <div className="space-y-3">
-              {insight.evidence.map((item, idx) => (
+              {evidenceList.map((item, idx) => (
                 <div
                   key={idx}
                   className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 transition"
@@ -112,7 +113,7 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({ insight, onClose
 
         {/* Footer */}
         <div className="pt-6 mt-6 border-t border-slate-800 flex items-center justify-between text-xs text-slate-500">
-          <span>Confidence: {Math.round(insight.confidence * 100)}%</span>
+          <span>Confidence: {Math.round((insight.confidence ?? 1) * 100)}%</span>
           <span>MIRROR AI Forensic Grounding</span>
         </div>
       </div>

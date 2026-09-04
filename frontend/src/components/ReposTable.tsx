@@ -8,12 +8,13 @@ interface ReposTableProps {
   repos: Repo[];
 }
 
-export const ReposTable: React.FC<ReposTableProps> = ({ repos }) => {
+export const ReposTable: React.FC<ReposTableProps> = ({ repos = [] }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filtered = repos.filter(
+  const safeRepos = Array.isArray(repos) ? repos : [];
+  const filtered = safeRepos.filter(
     (r) =>
-      r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (r.description && r.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (r.primary_language && r.primary_language.toLowerCase().includes(searchTerm.toLowerCase()))
   );
@@ -23,7 +24,7 @@ export const ReposTable: React.FC<ReposTableProps> = ({ repos }) => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-            <Code className="w-5 h-5 text-cyan-400" /> Analyzed Repositories ({repos.length})
+            <Code className="w-5 h-5 text-cyan-400" /> Analyzed Repositories ({safeRepos.length})
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             Software artifacts ingested, parsed, and checked for code health & complexity.
@@ -88,17 +89,19 @@ export const ReposTable: React.FC<ReposTableProps> = ({ repos }) => {
                   <td className="py-3.5 px-4 font-mono">
                     <span className="inline-flex items-center gap-1">
                       <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                      {repo.stars.toLocaleString()}
+                      {(repo.stars ?? 0).toLocaleString()}
                     </span>
                   </td>
                   <td className="py-3.5 px-4 font-mono">
                     <span className="inline-flex items-center gap-1 text-slate-400">
                       <GitFork className="w-3 h-3" />
-                      {repo.forks_count.toLocaleString()}
+                      {(repo.forks_count ?? 0).toLocaleString()}
                     </span>
                   </td>
                   <td className="py-3.5 px-4 font-mono text-slate-400">
-                    {repo.size_kb > 1024 ? `${(repo.size_kb / 1024).toFixed(1)} MB` : `${repo.size_kb} KB`}
+                    {(repo.size_kb ?? 0) > 1024
+                      ? `${((repo.size_kb ?? 0) / 1024).toFixed(1)} MB`
+                      : `${repo.size_kb ?? 0} KB`}
                   </td>
                   <td className="py-3.5 px-4 text-right">
                     <a

@@ -101,6 +101,7 @@ class RepositoryResponse(BaseModel):
     description: Optional[str] = None
     primary_language: Optional[str] = None
     stars: int = 0
+    forks_count: int = 0
     is_fork: bool = False
     size_kb: int = 0
     topics: Optional[List[str]] = None

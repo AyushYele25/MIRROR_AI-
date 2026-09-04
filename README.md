@@ -2,13 +2,19 @@
 
 > **Developer Intelligence Platform** — Learns observable software-engineering behavior from GitHub history and turns it into an evidence-backed developer profile.
 
-[![CI](https://github.com/ayush/MIRROR-AI/actions/workflows/ci.yml/badge.svg)](https://github.com/ayush/MIRROR-AI/actions/workflows/ci.yml)
+[![Live App](https://img.shields.io/badge/Live%20App-Vercel-black?logo=vercel)](https://mirror-ai-khaki-phi.vercel.app/)
+[![API Backend](https://img.shields.io/badge/API-Render-46E3B7?logo=render)](https://mirror-ai-0nkn.onrender.com/docs)
+[![Database](https://img.shields.io/badge/Database-Neon%20PostgreSQL-00E599?logo=postgresql)](https://neon.tech)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI%200.115-009688?logo=fastapi)](https://fastapi.tiangolo.com)
 [![Next.js](https://img.shields.io/badge/Frontend-Next.js%2015-black?logo=next.js)](https://nextjs.org)
-[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%20%2F%20Neon-336791?logo=postgresql)](https://neon.tech)
 [![Python](https://img.shields.io/badge/Python-3.12-blue?logo=python)](https://www.python.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)](https://www.typescriptlang.org)
+[![Tests](https://img.shields.io/badge/Tests-95%2F95%20Passing-brightgreen)](https://github.com/AyushYele25/MIRROR_AI-)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+🌐 **Live Application**: [https://mirror-ai-khaki-phi.vercel.app/](https://mirror-ai-khaki-phi.vercel.app/)  
+📖 **Interactive API Documentation (Swagger UI)**: [https://mirror-ai-0nkn.onrender.com/docs](https://mirror-ai-0nkn.onrender.com/docs)  
+🩺 **API Health Endpoint**: [https://mirror-ai-0nkn.onrender.com/health](https://mirror-ai-0nkn.onrender.com/health)
 
 ---
 

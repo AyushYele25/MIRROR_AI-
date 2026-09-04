@@ -194,15 +194,15 @@ export default function Home() {
                   <div className="flex flex-wrap items-center gap-3 mt-3">
                     <span className="inline-flex items-center gap-1 text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300">
                       <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-                      Confidence: {(profile.confidence * 100).toFixed(0)}%
+                      Confidence: {((profile.confidence ?? 1) * 100).toFixed(0)}%
                     </span>
                     <span className="inline-flex items-center gap-1 text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300">
                       <FolderGit2 className="w-3.5 h-3.5 text-violet-400" />
-                      {profile.repos_analyzed} Repos
+                      {profile.repos_analyzed ?? 0} Repos
                     </span>
                     <span className="inline-flex items-center gap-1 text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300">
                       <GitCommit className="w-3.5 h-3.5 text-emerald-400" />
-                      {profile.total_commits} Commits
+                      {profile.total_commits ?? 0} Commits
                     </span>
                   </div>
                 </div>
@@ -273,11 +273,11 @@ export default function Home() {
                   <h2 className="text-xl font-bold text-slate-100">Behavioral Insights</h2>
                 </div>
                 <span className="text-xs text-slate-400 font-mono">
-                  {profile.insights.length} audit claims
+                  {(profile.insights || []).length} audit claims
                 </span>
               </div>
 
-              {profile.insights.map((insight) => (
+              {(profile.insights || []).map((insight) => (
                 <div
                   key={insight.id}
                   onClick={() => setSelectedInsight(insight)}
